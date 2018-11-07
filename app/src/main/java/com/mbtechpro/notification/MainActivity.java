@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         notification.defaults |= Notification.DEFAULT_SOUND; // Sound
 
 
-        
+
         mNotificationManager.notify(1, notification);
 
     }
