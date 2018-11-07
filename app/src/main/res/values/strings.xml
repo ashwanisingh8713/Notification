@@ -2,7 +2,7 @@
     <string name="app_name">Notification</string>
 
     <string name="notif1">Default Notification</string>
-    <string name="notif2">Custom Notification </string>
+    <string name="notif2">Remote View Image Notification </string>
     <string name="notif3">Default Big Picture Notification with image URL</string>
-    <string name="notif4">Custom Big Picture Notification with image URL</string>
+    <string name="notif4">Remote View Big Picture Notification with image URL</string>
 </resources>

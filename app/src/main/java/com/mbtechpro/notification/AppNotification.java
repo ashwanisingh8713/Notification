@@ -82,7 +82,12 @@ public class AppNotification {
     }
 
 
-    public static void custom(Context context, Map<String, String> getData) {
+    /**
+     * This is RemoteView Notification with Image
+     * @param context
+     * @param getData
+     */
+    public static void customNotificationWithImage(Context context, Map<String, String> getData) {
 
         String body = getData.get("body");
         String title = getData.get("title");
@@ -146,6 +151,75 @@ public class AppNotification {
 
     }
 
+
+    private static void customNotificationWithImageUrl(Context context, Map<String, String> getData, Bitmap bitmap) {
+
+        String body = getData.get("body");
+        String title = getData.get("title");
+
+        int icon = R.mipmap.ic_launcher;
+        long when = System.currentTimeMillis();
+
+        //generating unique ID
+        int uniqueID = (int) System.currentTimeMillis();
+
+        NotificationManager mNotificationManager = (NotificationManager)context.getSystemService(context.NOTIFICATION_SERVICE);
+
+        CharSequence name="APP ss";
+        String desc="this is notific";
+        int imp=NotificationManager.IMPORTANCE_HIGH;
+        final String ChannelID="my_channel_01";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mChannel = new NotificationChannel(ChannelID, name, imp);
+            mChannel.setDescription(desc);
+            mChannel.setLightColor(Color.CYAN);
+            mChannel.canShowBadge();
+            mChannel.setShowBadge(true);
+            mNotificationManager.createNotificationChannel(mChannel);
+        }
+
+
+        RemoteViews smallView=new RemoteViews(context.getPackageName(),R.layout.notification_small);
+        smallView.setImageViewBitmap(R.id.smallImg, bitmap);
+        smallView.setTextViewText(R.id.titleTxt, title);
+        smallView.setTextViewText(R.id.msgTxt, body);
+
+        RemoteViews largeView = new RemoteViews(context.getPackageName(), R.layout.notification_large);
+        largeView.setImageViewBitmap(R.id.smallImg, bitmap);
+        largeView.setImageViewBitmap(R.id.largeImg, bitmap);
+        largeView.setTextViewText(R.id.titleTxt, title);
+        largeView.setTextViewText(R.id.msgTxt, body);
+
+        Notification notification = new NotificationCompat.Builder(context, ChannelID)
+                .setSmallIcon(icon)
+                .setContentTitle(title)
+                .setWhen(when)
+                .setCustomContentView(smallView)
+                .setCustomBigContentView(largeView)
+                .build();
+
+
+        Intent notificationIntent = new Intent(context, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(context, uniqueID, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        notification.contentIntent = contentIntent;
+
+
+        notification.flags |= Notification.FLAG_AUTO_CANCEL; // clear the notification
+        notification.defaults |= Notification.DEFAULT_LIGHTS; // LED
+        notification.defaults |= Notification.DEFAULT_VIBRATE; //Vibration
+        notification.defaults |= Notification.DEFAULT_SOUND; // Sound
+
+
+
+        mNotificationManager.notify(uniqueID, notification);
+
+    }
+
+    public static void customNotificationWithImageUrl(Context context, Map<String, String> getData) {
+        String imgUrl = getData.get("icon");
+        new CustomNotificationWithImgUrlTask(context, getData).execute(imgUrl);
+    }
     /**
      * It gives notification small icon.
      * @return
@@ -163,7 +237,7 @@ public class AppNotification {
      */
     public static void bigPictureNotification(Context context, Map<String, String> getData) {
         String imgUrl = getData.get("icon");
-        new BigPictureNotificationTask(context, getData).execute(imgUrl);
+        new DefaultBigPictureNotificationTask(context, getData).execute(imgUrl);
     }
 
     /**
@@ -239,12 +313,12 @@ public class AppNotification {
     /**
      * Downloads Bitmap image from URL and shows notification.
      */
-    private static class BigPictureNotificationTask extends AsyncTask<String, Void, Bitmap> {
+    private static class DefaultBigPictureNotificationTask extends AsyncTask<String, Void, Bitmap> {
 
         Context ctx;
         Map<String, String> getData;
 
-        public BigPictureNotificationTask(Context context, Map<String, String> getData) {
+        public DefaultBigPictureNotificationTask(Context context, Map<String, String> getData) {
             super();
             this.ctx = context;
             this.getData = getData;
@@ -252,10 +326,8 @@ public class AppNotification {
 
         @Override
         protected Bitmap doInBackground(String... params) {
-
             InputStream in;
             try {
-
                 URL url = new URL(params[0]);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
@@ -263,10 +335,6 @@ public class AppNotification {
                 in = connection.getInputStream();
                 Bitmap myBitmap = BitmapFactory.decodeStream(in);
                 return myBitmap;
-
-
-
-
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -277,11 +345,54 @@ public class AppNotification {
 
         @Override
         protected void onPostExecute(Bitmap result) {
-
             super.onPostExecute(result);
             try {
                 createBigPictureNotification(getData, ctx, result);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
+
+    /**
+     * Downloads Bitmap image from URL and shows notification.
+     */
+    private static class CustomNotificationWithImgUrlTask extends AsyncTask<String, Void, Bitmap> {
+
+        Context ctx;
+        Map<String, String> getData;
+
+        public CustomNotificationWithImgUrlTask(Context context, Map<String, String> getData) {
+            super();
+            this.ctx = context;
+            this.getData = getData;
+        }
+
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            InputStream in;
+            try {
+                URL url = new URL(params[0]);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                in = connection.getInputStream();
+                Bitmap myBitmap = BitmapFactory.decodeStream(in);
+                return myBitmap;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+            super.onPostExecute(result);
+            try {
+                customNotificationWithImageUrl(ctx, getData, result);
             } catch (Exception e) {
                 e.printStackTrace();
             }
